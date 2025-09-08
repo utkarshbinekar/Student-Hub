@@ -37,12 +37,10 @@ const Faculty = () => {
   const filterActivities = () => {
     let filtered = activities;
 
-    // Filter by status
     if (filter !== 'all') {
       filtered = filtered.filter(activity => activity.status === filter);
     }
 
-    // Filter by search term
     if (search) {
       filtered = filtered.filter(activity =>
         activity.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,7 +60,6 @@ const Faculty = () => {
         { status, credits }
       );
 
-      // Update local state
       setActivities(prev =>
         prev.map(activity =>
           activity._id === activityId ? response.data : activity
@@ -110,10 +107,10 @@ const Faculty = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-screen bg-gray-50 overflow-hidden">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Faculty Approval Panel</h1>
@@ -166,7 +163,6 @@ const Faculty = () => {
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Status Filter */}
             <div className="flex items-center space-x-2">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
@@ -181,7 +177,6 @@ const Faculty = () => {
               </select>
             </div>
 
-            {/* Search */}
             <div className="flex-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -339,7 +334,7 @@ const Faculty = () => {
   );
 };
 
-// Approval Modal Component
+// Approval Modal Component (unchanged)
 const ApprovalModal = ({ activity, onClose, onApprove, onReject }) => {
   const [credits, setCredits] = useState(0);
 
@@ -347,9 +342,7 @@ const ApprovalModal = ({ activity, onClose, onApprove, onReject }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">

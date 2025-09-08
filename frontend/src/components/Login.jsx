@@ -91,9 +91,9 @@ const Login = () => {
   const years = [1, 2, 3, 4];
 
   return (
-    <div className="min-h-screen w-screen flex flex-col lg:flex-row overflow-hidden">
+    <div className="min-h-screen w-screen flex flex-col lg:flex-row overflow-hidden animate-fadeIn">
       {/* Left Side - Hero Section */}
-      <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden flex flex-col min-h-screen">
+      <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden flex flex-col min-h-screen transform transition-transform duration-700 ease-in-out hover:scale-[1.02]">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent"></div>
@@ -378,7 +378,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={toggleMode}
-                  className="text-base text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200 underline decoration-2 underline-offset-4"
+                  className="px-6 py-2.5 text-base font-semibold text-blue-600 bg-blue-50/50 hover:bg-blue-100 rounded-xl transition-all duration-300 ease-in-out hover:shadow-md hover:scale-[1.02] border-2 border-blue-100 hover:border-blue-200"
                 >
                   {isLogin 
                     ? "Don't have an account? Sign up" 
@@ -575,7 +575,7 @@ const Login = () => {
               <button
                 type="button"
                 onClick={toggleMode}
-                className="text-blue-600 hover:text-blue-700 font-semibold underline decoration-2 underline-offset-4"
+                className="w-full px-6 py-2.5 text-base font-semibold text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl transition-all duration-300 ease-in-out hover:shadow-md hover:scale-[1.02] border-2 border-blue-100 hover:border-blue-200"
               >
                 {isLogin 
                   ? "Don't have an account? Sign up" 
