@@ -109,7 +109,7 @@ const Faculty = () => {
   return (
     <div className="min-h-screen w-screen bg-gray-50 overflow-hidden">
       <Navbar />
-      
+
       <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -186,8 +186,10 @@ const Faculty = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by activity title, student name, or ID..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block text-black w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+
+
             </div>
           </div>
         </div>
@@ -244,9 +246,9 @@ const Faculty = () => {
                               </span>
                             </div>
                           </div>
-                          
+
                           <p className="text-sm text-gray-500 mt-3">{activity.description}</p>
-                          
+
                           {activity.duration && (
                             <p className="text-sm text-gray-500 mt-1">
                               <span className="font-medium">Duration:</span> {activity.duration}
