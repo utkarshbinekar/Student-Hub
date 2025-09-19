@@ -13,63 +13,86 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true); // ADD THIS LINE - Define loading state
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // In a real app, verify token validity here
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        setUser(JSON.parse(userData));
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        try {
+          // Set axios default header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          // Parse stored user data
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
       }
-    }
-    setLoading(false);
+      
+      setLoading(false); // Set loading to false after checking
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (email, password) => {
+    setLoading(true); // Set loading to true during login
     try {
       const response = await axios.post('http://localhost:5000/api/auth/login', {
         email,
         password
       });
-      
-      const { token, user } = response.data;
-      
+
+      const { token, user: userData } = response.data;
+
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
+      localStorage.setItem('user', JSON.stringify(userData));
+
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      
+      setUser(userData);
+      setIsAuthenticated(true);
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed'
       };
+    } finally {
+      setLoading(false); // Always set loading to false
     }
   };
 
   const register = async (userData) => {
+    setLoading(true); // Set loading to true during registration
     try {
       const response = await axios.post('http://localhost:5000/api/auth/register', userData);
-      
-      const { token, user } = response.data;
-      
+
+      const { token, user: newUser } = response.data;
+
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
+      localStorage.setItem('user', JSON.stringify(newUser));
+
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      
+      setUser(newUser);
+      setIsAuthenticated(true);
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registration failed'
       };
+    } finally {
+      setLoading(false); // Always set loading to false
     }
   };
 
@@ -78,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   const value = {
@@ -85,8 +109,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!user,
-    loading
+    isAuthenticated,
+    loading // Now this variable exists
   };
 
   return (

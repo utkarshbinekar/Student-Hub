@@ -1,22 +1,52 @@
 const mongoose = require('mongoose');
 
 const activitySchema = new mongoose.Schema({
-  student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  title: { type: String, required: true },
-  type: { 
-    type: String, 
-    enum: ['conference', 'workshop', 'certification', 'competition', 'internship', 'volunteer', 'leadership', 'community'],
-    required: true 
+  title: {
+    type: String,
+    required: true
   },
-  description: { type: String, required: true },
-  organizer: { type: String },
-  date: { type: Date, required: true },
-  duration: { type: String },
-  certificate: { type: String }, // File path
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  credits: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
+  type: {
+    type: String,
+    required: true,
+    enum: ['conference', 'workshop', 'certification', 'competition', 'internship', 'volunteer', 'leadership', 'community']
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  organizer: {
+    type: String
+  },
+  duration: {
+    type: String
+  },
+  certificate: {
+    type: String // File path
+  },
+  student: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  credits: {
+    type: Number,
+    default: 0
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Activity', activitySchema);

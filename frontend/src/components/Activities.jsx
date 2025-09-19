@@ -2,24 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Award } from 'lucide-react';
 import Navbar from './Navbar';
 import AddActivityModal from './AddActivityModal';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const Activities = () => {
+  const { user } = useAuth();
   const [activities, setActivities] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchActivities();
-  }, []);
+    if (user?.id) {
+      fetchActivities();
+    }
+  }, [user?.id]);
 
   const fetchActivities = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    setError(null);
+    
     try {
-      const response = await axios.get('http://localhost:5000/api/activities');
+      // Try user-specific endpoint first
+      const response = await axios.get(`http://localhost:5000/api/activities/user/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       setActivities(response.data);
     } catch (error) {
-      toast.error('Error fetching activities');
+      console.error('Error fetching activities:', error);
+      setError('Error loading activities');
+      
+      // Fallback to general activities endpoint and filter client-side
+      try {
+        const response = await axios.get('http://localhost:5000/api/activities', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        // Filter activities for current user client-side as fallback
+        const userActivities = response.data.filter(activity => 
+          activity.student === user.id || 
+          activity.student?._id === user.id ||
+          activity.student?.toString() === user.id
+        );
+        
+        setActivities(userActivities);
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        toast.error('Error fetching activities');
+      }
     } finally {
       setLoading(false);
     }
@@ -29,6 +66,8 @@ const Activities = () => {
     setActivities([newActivity, ...activities]);
     setIsModalOpen(false);
     toast.success('Activity added successfully!');
+    // Refresh activities to get updated data
+    fetchActivities();
   };
 
   const getStatusColor = (status) => {
@@ -66,6 +105,11 @@ const Activities = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Activities</h1>
             <p className="text-gray-600 mt-2">Manage your academic and extracurricular activities</p>
+            {error && (
+              <div className="mt-2 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+                {error}
+              </div>
+            )}
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -99,14 +143,15 @@ const Activities = () => {
               </div>
             ) : (
               activities.map((activity) => (
-                <div key={activity._id} className="bg-white shadow rounded-lg p-6">
+                <div key={activity._id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
+                    <div className="flex items-start space-x-4 flex-1">
                       {getActivityIcon(activity.type)}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-medium text-gray-900">{activity.title}</h3>
                         <p className="text-sm text-gray-600 mt-1 capitalize">{activity.type}</p>
                         <p className="text-sm text-gray-500 mt-2">{activity.description}</p>
+                        
                         <div className="flex items-center space-x-4 mt-4 text-sm text-gray-500">
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-1" />
@@ -115,17 +160,38 @@ const Activities = () => {
                           {activity.organizer && (
                             <span>Organized by: {activity.organizer}</span>
                           )}
-                          {activity.credits > 0 && (
-                            <span className="text-green-600 font-medium">
-                              {activity.credits} credits
-                            </span>
+                          {activity.duration && (
+                            <span>Duration: {activity.duration}</span>
                           )}
                         </div>
+                        
+                        {activity.credits > 0 && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {activity.credits} credits awarded
+                            </span>
+                          </div>
+                        )}
+                        
+                        {activity.certificate && (
+                          <div className="mt-2">
+                            <a
+                              href={`http://localhost:5000/${activity.certificate}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            >
+                              View Certificate
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
-                      {activity.status}
-                    </span>
+                    <div className="ml-4 flex-shrink-0">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                        {activity.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))

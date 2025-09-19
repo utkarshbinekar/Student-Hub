@@ -1,31 +1,89 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Activity, Award, Clock, Users, BookOpen, Trophy } from 'lucide-react';
 import Navbar from './Navbar';
 import axios from 'axios';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics, setAnalytics] = useState({
+    totalActivities: 0,
+    approvedActivities: 0,
+    pendingActivities: 0,
+    totalCredits: 0,
+    activityByType: []
+  });
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user?.id) {
+      fetchUserData();
+    }
+  }, [user?.id]);
 
-  const fetchData = async () => {
+  const fetchUserData = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    setError(null);
+    
     try {
       const [analyticsRes, activitiesRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/activities/analytics'),
-        axios.get('http://localhost:5000/api/activities')
+        axios.get(`http://localhost:5000/api/activities/analytics/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }),
+        axios.get(`http://localhost:5000/api/activities/user/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
       ]);
       
       setAnalytics(analyticsRes.data);
       setRecentActivities(activitiesRes.data.slice(0, 5));
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching user data:', error);
+      setError(error.response?.data?.message || 'Error loading dashboard data');
+      
+      // Fallback - try to get activities without analytics
+      try {
+        const activitiesRes = await axios.get(`http://localhost:5000/api/activities`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        // Filter activities for current user client-side as fallback
+        const userActivities = activitiesRes.data.filter(activity => 
+          activity.student === user.id || activity.student?._id === user.id
+        );
+        
+        setRecentActivities(userActivities.slice(0, 5));
+        
+        // Calculate analytics client-side
+        const totalActivities = userActivities.length;
+        const approvedActivities = userActivities.filter(a => a.status === 'approved').length;
+        const pendingActivities = userActivities.filter(a => a.status === 'pending').length;
+        const totalCredits = userActivities
+          .filter(a => a.status === 'approved')
+          .reduce((sum, a) => sum + (a.credits || 0), 0);
+        
+        setAnalytics({
+          totalActivities,
+          approvedActivities,
+          pendingActivities,
+          totalCredits,
+          activityByType: []
+        });
+        
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,6 +125,11 @@ const Dashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
           <p className="text-gray-600 mt-2">Track your academic journey and achievements</p>
+          {error && (
+            <div className="mt-2 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -75,8 +138,8 @@ const Dashboard = () => {
             <div className="flex items-center">
               <Activity className="h-12 w-12 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Activities</p>
-                <p className="text-2xl font-semibold text-gray-900">{analytics?.totalActivities || 0}</p>
+                <p className="text-sm font-medium text-gray-600">My Activities</p>
+                <p className="text-2xl font-semibold text-gray-900">{analytics.totalActivities}</p>
               </div>
             </div>
           </div>
@@ -86,7 +149,7 @@ const Dashboard = () => {
               <Award className="h-12 w-12 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-semibold text-gray-900">{analytics?.approvedActivities || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{analytics.approvedActivities}</p>
               </div>
             </div>
           </div>
@@ -96,7 +159,7 @@ const Dashboard = () => {
               <Clock className="h-12 w-12 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900">{analytics?.pendingActivities || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{analytics.pendingActivities}</p>
               </div>
             </div>
           </div>
@@ -105,10 +168,8 @@ const Dashboard = () => {
             <div className="flex items-center">
               <Trophy className="h-12 w-12 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Credits</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {recentActivities.reduce((sum, activity) => sum + (activity.credits || 0), 0)}
-                </p>
+                <p className="text-sm font-medium text-gray-600">My Credits</p>
+                <p className="text-2xl font-semibold text-gray-900">{analytics.totalCredits}</p>
               </div>
             </div>
           </div>
@@ -119,7 +180,7 @@ const Dashboard = () => {
           {/* Activity Types Chart */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Activities by Type</h3>
-            {analytics?.activityByType && analytics.activityByType.length > 0 ? (
+            {analytics.activityByType && analytics.activityByType.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -140,7 +201,7 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-300 text-gray-500">
+              <div className="flex items-center justify-center h-64 text-gray-500">
                 No data available
               </div>
             )}
@@ -149,7 +210,7 @@ const Dashboard = () => {
           {/* Recent Activities */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-64 overflow-y-auto">
               {recentActivities.length > 0 ? (
                 recentActivities.map((activity) => {
                   const IconComponent = getActivityIcon(activity.type);
