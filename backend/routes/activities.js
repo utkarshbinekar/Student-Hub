@@ -3,6 +3,7 @@ const router = express.Router();
 const Activity = require('../models/Activity');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { createNotification } = require('./notifications');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -251,6 +252,25 @@ router.post('/with-file', auth, upload.single('certificate'), async (req, res) =
     const savedActivity = await activity.save();
     
     await savedActivity.populate('student', 'name studentId department');
+
+    // 📧 CREATE NOTIFICATION FOR ACTIVITY SUBMISSION
+    await createNotification(
+      req.user.userId,
+      'Activity Submitted',
+      `Your activity "${title}" has been submitted for review.`,
+      'pending',
+      savedActivity._id
+    );
+
+    // 🔔 SEND REAL-TIME NOTIFICATION
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.user.userId).emit('notification', {
+        title: 'Activity Submitted',
+        message: `Your activity "${title}" is now pending review.`,
+        type: 'pending'
+      });
+    }
     
     console.log('✅ Activity with file created:', savedActivity._id);
     res.status(201).json(savedActivity);
@@ -303,6 +323,25 @@ router.post('/', auth, async (req, res) => {
     const savedActivity = await activity.save();
     
     await savedActivity.populate('student', 'name studentId department');
+
+    // 📧 CREATE NOTIFICATION FOR ACTIVITY SUBMISSION
+    await createNotification(
+      req.user.userId,
+      'Activity Submitted',
+      `Your activity "${title}" has been submitted for review.`,
+      'pending',
+      savedActivity._id
+    );
+
+    // 🔔 SEND REAL-TIME NOTIFICATION
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.user.userId).emit('notification', {
+        title: 'Activity Submitted',
+        message: `Your activity "${title}" is now pending review.`,
+        type: 'pending'
+      });
+    }
     
     console.log('✅ Activity created:', savedActivity._id);
     res.status(201).json(savedActivity);
@@ -347,7 +386,7 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// PATCH update activity status (faculty only)
+// PATCH update activity status (faculty only) - WITH NOTIFICATIONS
 router.patch('/:id/status', auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -382,7 +421,39 @@ router.patch('/:id/status', auth, async (req, res) => {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
-    console.log('✅ Activity status updated:', activity._id);
+    // 📧 CREATE NOTIFICATION FOR STATUS UPDATE
+    const notificationTitle = status === 'approved' ? 'Activity Approved! 🎉' : 
+                            status === 'rejected' ? 'Activity Update' : 'Activity Status Changed';
+    
+    const notificationMessage = status === 'approved' 
+      ? `Your activity "${activity.title}" has been approved${credits ? ` with ${credits} credits` : ''}!`
+      : status === 'rejected'
+      ? `Your activity "${activity.title}" has been rejected. Please contact faculty for feedback.`
+      : `Your activity "${activity.title}" status has been updated to ${status}.`;
+
+    await createNotification(
+      activity.student._id,
+      notificationTitle,
+      notificationMessage,
+      status,
+      activity._id
+    );
+
+    // 🔔 SEND REAL-TIME NOTIFICATION VIA SOCKET.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.to(activity.student._id.toString()).emit('notification', {
+        title: notificationTitle,
+        message: notificationMessage,
+        type: status,
+        activityId: activity._id,
+        credits: credits || 0
+      });
+
+      console.log('🔔 Real-time notification sent to user:', activity.student._id);
+    }
+
+    console.log('✅ Activity status updated with notification:', activity._id);
     res.json(activity);
   } catch (error) {
     console.error('❌ Update activity status error:', error);
@@ -422,8 +493,29 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     await Activity.findByIdAndDelete(id);
-    console.log('✅ Activity deleted:', id);
+
+    // 📧 CREATE NOTIFICATION FOR ACTIVITY DELETION (if deleted by faculty/admin)
+    if (req.user.role === 'faculty' || req.user.role === 'admin') {
+      await createNotification(
+        activity.student,
+        'Activity Removed',
+        `Your activity "${activity.title}" has been removed by ${req.user.name}.`,
+        'general',
+        null
+      );
+
+      // 🔔 SEND REAL-TIME NOTIFICATION
+      const io = req.app.get('io');
+      if (io) {
+        io.to(activity.student.toString()).emit('notification', {
+          title: 'Activity Removed',
+          message: `Your activity "${activity.title}" has been removed.`,
+          type: 'general'
+        });
+      }
+    }
     
+    console.log('✅ Activity deleted:', id);
     res.json({ message: 'Activity deleted successfully' });
   } catch (error) {
     console.error('❌ Delete activity error:', error);

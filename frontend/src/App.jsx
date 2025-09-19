@@ -4,9 +4,10 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import EnhancedDashboard from './components/EnhancedDashboard'; // Changed to EnhancedDashboard
 import Activities from './components/Activities';
 import Faculty from './components/Faculty';
+import Portfolio from './components/Portfolio';
 
 function App() {
   return (
@@ -20,13 +21,19 @@ function App() {
             {/* Protected Student Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <EnhancedDashboard />
               </ProtectedRoute>
             } />
             
             <Route path="/activities" element={
               <ProtectedRoute>
                 <Activities />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/portfolio" element={
+              <ProtectedRoute>
+                <Portfolio />
               </ProtectedRoute>
             } />
             
