@@ -2,6 +2,7 @@ import React from 'react';
 import { Home, Activity, Users, LogOut, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import NotificationCenter from './NotificationCenter';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -72,8 +73,12 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* User Menu */}
+          {/* Right Side - Notifications and User Menu */}
           <div className="flex items-center space-x-4">
+            {/* Notification Center */}
+            <NotificationCenter />
+            
+            {/* User Info */}
             <div className="flex items-center text-white">
               <User className="h-5 w-5 mr-2" />
               <div className="text-sm">
@@ -82,6 +87,7 @@ const Navbar = () => {
               </div>
             </div>
             
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
               className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-500 hover:text-white transition-colors"

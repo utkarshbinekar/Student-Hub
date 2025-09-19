@@ -89,16 +89,8 @@ const EnhancedDashboard = () => {
 
   return (
     <div className="min-h-screen w-screen bg-gray-50 overflow-hidden">
-      <div className="flex justify-between items-center bg-blue-600 px-6 py-4">
-        <h1 className="text-xl font-bold text-white">Smart Student Hub</h1>
-        <div className="flex items-center space-x-4">
-          <NotificationCenter />
-          <div className="text-white text-sm">
-            <p className="font-medium">{user?.name}</p>
-            <p className="text-blue-200 capitalize">({user?.role})</p>
-          </div>
-        </div>
-      </div>
+      {/* Use the existing Navbar component */}
+      <Navbar />
       
       <div className="w-full h-full px-6 py-8">
         {/* Welcome Section with Quick Actions */}
