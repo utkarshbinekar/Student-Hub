@@ -1,64 +1,93 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Home, Activity, Users, LogOut, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const isActive = (path) => {
-    return location.pathname === path ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-600';
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const navItems = [
+    {
+      name: 'Dashboard',
+      icon: Home,
+      path: '/dashboard',
+      roles: ['student', 'faculty', 'admin']
+    },
+    {
+      name: 'Activities',
+      icon: Activity,
+      path: '/activities',
+      roles: ['student', 'faculty', 'admin']
+    },
+    {
+      name: 'Faculty Panel',
+      icon: Users,
+      path: '/faculty',
+      roles: ['faculty', 'admin']
+    }
+  ];
+
+  const visibleNavItems = navItems.filter(item => 
+    item.roles.includes(user?.role)
+  );
+
   return (
-    <nav className="bg-blue-600 shadow-lg w-full">
-      <div className="w-full px-6">
-        <div className="flex justify-between h-16">
+    <nav className="bg-blue-600 shadow-lg">
+      <div className="w-full px-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <h2 className="text-xl font-bold text-white">Smart Student Hub</h2>
-            </div>
-            <div className="hidden md:block ml-8">
-              <div className="flex items-baseline space-x-6">
-                <Link
-                  to="/"
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${isActive('/')}`}
-                >
-                  <Home className="inline h-4 w-4 mr-1" />
-                  Dashboard
-                </Link>
-                <Link
-                  to="/activities"
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/activities')}`}
-                >
-                  <Activity className="inline h-4 w-4 mr-1" />
-                  Activities
-                </Link>
-                {(user?.role === 'faculty' || user?.role === 'admin') && (
-                  <Link
-                    to="/faculty"
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/faculty')}`}
-                  >
-                    <Users className="inline h-4 w-4 mr-1" />
-                    Faculty Panel
-                  </Link>
-                )}
-              </div>
-            </div>
+            <h1 className="text-xl font-bold text-white">Smart Student Hub</h1>
           </div>
-          
+
+          {/* Navigation Items */}
+          <div className="flex items-center space-x-1">
+            {visibleNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-blue-700 text-white'
+                      : 'text-blue-100 hover:bg-blue-500 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mr-2" />
+                  {item.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* User Menu */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center text-white">
               <User className="h-5 w-5 mr-2" />
-              <span className="text-sm font-medium">{user?.name}</span>
-              <span className="text-xs text-blue-200 ml-2 capitalize">({user?.role})</span>
+              <div className="text-sm">
+                <p className="font-medium">{user?.name}</p>
+                <p className="text-blue-200 capitalize">({user?.role})</p>
+              </div>
             </div>
+            
             <button
-              onClick={logout}
-              className="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              onClick={handleLogout}
+              className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-500 hover:text-white transition-colors"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
             </button>
           </div>
         </div>

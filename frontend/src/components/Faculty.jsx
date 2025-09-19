@@ -16,8 +16,10 @@ const Faculty = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchActivities();
-  }, []);
+    if (user?.role === 'faculty' || user?.role === 'admin') {
+      fetchActivities();
+    }
+  }, [user]);
 
   useEffect(() => {
     filterActivities();
@@ -25,9 +27,14 @@ const Faculty = () => {
 
   const fetchActivities = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/activities');
+      const response = await axios.get('http://localhost:5000/api/activities', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       setActivities(response.data);
     } catch (error) {
+      console.error('Error fetching activities:', error);
       toast.error('Error fetching activities');
     } finally {
       setLoading(false);
@@ -57,7 +64,12 @@ const Faculty = () => {
     try {
       const response = await axios.patch(
         `http://localhost:5000/api/activities/${activityId}/status`,
-        { status, credits }
+        { status, credits },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
       );
 
       setActivities(prev =>
@@ -69,6 +81,7 @@ const Faculty = () => {
       toast.success(`Activity ${status} successfully!`);
       setModalOpen(false);
     } catch (error) {
+      console.error('Error updating activity:', error);
       toast.error(`Error ${status === 'approved' ? 'approving' : 'rejecting'} activity`);
     }
   };
@@ -84,21 +97,6 @@ const Faculty = () => {
     }
   };
 
-  const getActivityIcon = (type) => {
-    const icons = {
-      conference: FileText,
-      workshop: FileText,
-      certification: FileText,
-      competition: FileText,
-      internship: FileText,
-      volunteer: FileText,
-      leadership: FileText,
-      community: FileText
-    };
-    const IconComponent = icons[type] || FileText;
-    return <IconComponent className="h-5 w-5 text-blue-600" />;
-  };
-
   const stats = {
     total: activities.length,
     pending: activities.filter(a => a.status === 'pending').length,
@@ -106,12 +104,25 @@ const Faculty = () => {
     rejected: activities.filter(a => a.status === 'rejected').length
   };
 
+  if (user?.role !== 'faculty' && user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen w-screen bg-gray-50 overflow-hidden">
+        <Navbar />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+            <p className="mt-2 text-gray-600">This page is only accessible to faculty and administrators.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-screen bg-gray-50 overflow-hidden">
       <Navbar />
 
       <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Faculty Approval Panel</h1>
           <p className="text-gray-600 mt-2">Review and approve student activities</p>
@@ -121,8 +132,8 @@ const Faculty = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <FileText className="h-12 w-12 text-blue-600" />
-              <div className="ml-4">
+              <FileText className="h-12 w-12 text-blue-600 mr-4" />
+              <div>
                 <p className="text-sm font-medium text-gray-600">Total Activities</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
               </div>
@@ -131,8 +142,8 @@ const Faculty = () => {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <Clock className="h-12 w-12 text-yellow-600" />
-              <div className="ml-4">
+              <Clock className="h-12 w-12 text-yellow-600 mr-4" />
+              <div>
                 <p className="text-sm font-medium text-gray-600">Pending Review</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
               </div>
@@ -141,8 +152,8 @@ const Faculty = () => {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <Check className="h-12 w-12 text-green-600" />
-              <div className="ml-4">
+              <Check className="h-12 w-12 text-green-600 mr-4" />
+              <div>
                 <p className="text-sm font-medium text-gray-600">Approved</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.approved}</p>
               </div>
@@ -151,8 +162,8 @@ const Faculty = () => {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <X className="h-12 w-12 text-red-600" />
-              <div className="ml-4">
+              <X className="h-12 w-12 text-red-600 mr-4" />
+              <div>
                 <p className="text-sm font-medium text-gray-600">Rejected</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.rejected}</p>
               </div>
@@ -186,9 +197,8 @@ const Faculty = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by activity title, student name, or ID..."
-                className="block text-black w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-
 
             </div>
           </div>
@@ -211,107 +221,86 @@ const Faculty = () => {
               </div>
             ) : (
               filteredActivities.map((activity) => (
-                <div key={activity._id} className="bg-white shadow rounded-lg">
-                  <div className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        {getActivityIcon(activity.type)}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-medium text-gray-900">{activity.title}</h3>
-                              <p className="text-sm text-gray-600 mt-1 capitalize">
-                                {activity.type} • {new Date(activity.date).toLocaleDateString()}
+                <div key={activity._id} className="bg-white shadow rounded-lg p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-medium text-gray-900">{activity.title}</h3>
+                          <p className="text-sm text-gray-600 mt-1 capitalize">
+                            {activity.type} • {new Date(activity.date).toLocaleDateString()}
+                          </p>
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Student:</span> {activity.student?.name} ({activity.student?.studentId})
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Department:</span> {activity.student?.department}
+                            </p>
+                            {activity.organizer && (
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Organizer:</span> {activity.organizer}
                               </p>
-                              <div className="mt-2">
-                                <span className="text-sm font-medium text-gray-700">Student: </span>
-                                <span className="text-sm text-gray-600">
-                                  {activity.student?.name} ({activity.student?.studentId})
-                                </span>
-                              </div>
-                              <div className="mt-1">
-                                <span className="text-sm font-medium text-gray-700">Department: </span>
-                                <span className="text-sm text-gray-600">{activity.student?.department}</span>
-                              </div>
-                              {activity.organizer && (
-                                <div className="mt-1">
-                                  <span className="text-sm font-medium text-gray-700">Organizer: </span>
-                                  <span className="text-sm text-gray-600">{activity.organizer}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-2 ml-4">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(activity.status)}`}>
-                                {activity.status}
-                              </span>
-                            </div>
+                            )}
+                            {activity.duration && (
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Duration:</span> {activity.duration}
+                              </p>
+                            )}
                           </div>
-
-                          <p className="text-sm text-gray-500 mt-3">{activity.description}</p>
-
-                          {activity.duration && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              <span className="font-medium">Duration:</span> {activity.duration}
-                            </p>
-                          )}
-
-                          {activity.credits > 0 && (
-                            <p className="text-sm text-green-600 mt-1 font-medium">
-                              Credits Awarded: {activity.credits}
-                            </p>
-                          )}
                         </div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(activity.status)}`}>
+                          {activity.status}
+                        </span>
                       </div>
+
+                      <p className="text-sm text-gray-500 mt-3">{activity.description}</p>
+
+                      {activity.credits > 0 && (
+                        <p className="text-sm text-green-600 mt-2 font-medium">
+                          Credits Awarded: {activity.credits}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="flex space-x-3">
+                      {activity.certificate && (
+                        <a
+                          href={`http://localhost:5000/${activity.certificate}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          View Certificate
+                        </a>
+                      )}
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="flex space-x-3">
+                    {activity.status === 'pending' && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleApproval(activity._id, 'rejected')}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject
+                        </button>
                         <button
                           onClick={() => {
                             setSelectedActivity(activity);
                             setModalOpen(true);
                           }}
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Details
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve
                         </button>
-                        {activity.certificate && (
-                          <a
-                            href={`http://localhost:5000/${activity.certificate}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Certificate
-                          </a>
-                        )}
                       </div>
-
-                      {activity.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleApproval(activity._id, 'rejected')}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Reject
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedActivity(activity);
-                              setModalOpen(true);
-                            }}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -336,14 +325,14 @@ const Faculty = () => {
   );
 };
 
-// Approval Modal Component (unchanged)
+// Approval Modal Component
 const ApprovalModal = ({ activity, onClose, onApprove, onReject }) => {
   const [credits, setCredits] = useState(0);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -371,25 +360,6 @@ const ApprovalModal = ({ activity, onClose, onApprove, onReject }) => {
                 <p className="text-sm font-medium text-gray-700">Description:</p>
                 <p className="text-sm text-gray-600">{activity.description}</p>
               </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-700">Date:</p>
-                <p className="text-sm text-gray-600">{new Date(activity.date).toLocaleDateString()}</p>
-              </div>
-
-              {activity.organizer && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Organizer:</p>
-                  <p className="text-sm text-gray-600">{activity.organizer}</p>
-                </div>
-              )}
-
-              {activity.duration && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Duration:</p>
-                  <p className="text-sm text-gray-600">{activity.duration}</p>
-                </div>
-              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
