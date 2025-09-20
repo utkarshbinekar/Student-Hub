@@ -101,13 +101,13 @@ const EnhancedDashboard = () => {
               <p className="text-gray-600 mt-2">Track your academic journey and achievements</p>
             </div>
             <div className="flex space-x-4">
-              <button
+              {/* <button
                 onClick={() => setShowTemplates(!showTemplates)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
               >
                 <BookOpen className="h-5 w-5 mr-2" />
                 Quick Add
-              </button>
+              </button> */}
               <button
                 onClick={generatePortfolio}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
