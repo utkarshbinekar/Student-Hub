@@ -432,17 +432,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
 
 **Made with ❤️ for the education community**
-
-[![⭐ Star on GitHub](https://img.shields.io/github/stars/yourusername/smart-student-hub?Hub](https://img.shields.io/github/forks/yourusername/smart-student-hub.com/yourusername/smart-student-hub/ updated: September 20, 2025*
-
-This comprehensive README file provides all the essential information about your Smart Student Hub project, including detailed installation instructions, usage guidelines, API documentation, and contribution guidelines. The professional formatting with emojis, badges, and structured sections makes it easy to read and understand for both developers and potential users.
-
-[1](https://github.com/othneildrew/Best-README-Template)
-[2](https://github.com/prakharrathi25/academic-portfolio)
-[3](https://www.freecodecamp.org/news/how-to-write-a-good-readme-file/)
-[4](https://dev.to/sumonta056/github-readme-template-for-personal-projects-3lka)
-[5](https://www.linkedin.com/posts/christine-jiang_create-a-standout-project-write-up-data-activity-7240381709102297089-Vvyz)
-[6](https://www.youtube.com/watch?v=rCt9DatF63I)
-[7](https://bulldogjob.com/readme/how-to-write-a-good-readme-for-your-github-project)
-[8](https://www.reddit.com/r/github/comments/19efw2c/readme_for_a_tech_portfolio/)
-[9](https://gprm.itsvg.in)
